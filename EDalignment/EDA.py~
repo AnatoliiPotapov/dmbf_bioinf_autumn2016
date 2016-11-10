@@ -1,0 +1,138 @@
+# coding: utf-8
+# Potapov 4115
+
+# uahahah we are going with numpy this time
+import numpy as np
+
+with open('input.txt') as f:
+    lines = f.readlines()
+
+indexes = []
+output = []
+
+# first selecting indexes of dna definitions
+for index, line in  enumerate(lines):
+    if '>' in line:
+        indexes.append(index)
+
+indexes.append(len(lines))
+
+# print indexes
+
+# populating sequences
+seq1 = "".join(lines[indexes[0]+1:indexes[1]]).replace('\n', '')
+seq2 = "".join(lines[indexes[1]+1:indexes[2]]).replace('\n', '')
+
+# but that`s not all, we need to store traces, fuck`n traces!
+# 0 - diagonal
+# 1 - downside
+# 2 - rightside
+
+# initializing edit matrix
+m = np.zeros((len(seq1)+1, len(seq2)+1))
+m[:,0] = range(len(seq1)+1)
+m[0,:] = range(len(seq2)+1)
+
+# initializing trace matrix
+tr = np.zeros((len(seq1)+1, len(seq2)+1))
+tr[:,0] = [2] * (len(seq1)+1)
+tr[0,:] = [1] * (len(seq2)+1)
+tr[0, 0] = 0
+
+# then calculating both
+for i in range(1, len(seq1)+1):
+    for j in range(1, len(seq2)+1):
+    
+        m[i, j] = m[i-1, j-1] + (seq1[i-1] != seq2[j-1])
+        tr[i, j] = 0
+        
+        if m[i, j] > m[i-1, j] + 1:
+            m[i, j] = m[i-1, j] + 1
+            tr[i, j] = 2
+        
+        if m[i, j] > m[i, j-1] + 1:
+            m[i, j] = m[i, j-1] + 1
+            tr[i, j] = 1
+
+# producing output
+output.append(str(int(m[len(seq1), len(seq2)])))
+
+# print m
+# print tr
+
+# going back collecting alignment
+alignment = []
+i = len(seq1)
+j = len(seq2)
+
+while (i>-1 and j>-1):
+    
+    if tr[i,j] == 0:
+        alignment.append(0)
+        i-=1
+        j-=1
+        
+    if tr[i,j] == 1:
+        alignment.append(1)
+        j-=1
+    
+    if tr[i,j] == 2:
+        alignment.append(2)
+        i-=1
+
+# print alignment
+
+# generating alignment
+ali1 = []
+ali2 = []
+ind1 = 0
+ind2 = 0
+
+for i in alignment:
+    
+    if i == 0:
+        
+        # идем по диагонали
+        if ind1 < len(seq1): 
+            ali1.append(seq1[ind1])
+        else:
+            ali1.append('-')
+        ind1+=1
+        
+        if ind2 < len(seq2): 
+            ali2.append(seq2[ind2])
+        else:
+            ali2.append('-')
+        ind2+=1
+        
+    if i == 1:
+        
+        # идем вправо
+        ali2.append('-')
+        if ind1 < len(seq1): 
+            ali1.append(seq1[ind1])
+        else:
+            ali1.append('-')
+        ind1+=1
+    if i == 2:
+        
+        # идем вниз
+        ali1.append('-')
+        if ind2 < len(seq2): 
+            ali2.append(seq2[ind2])
+        else:
+            ali2.append('-')
+        ind2+=1
+
+# print ''.join(ali1)
+# print ''.join(ali2)
+
+# producing outputs
+output.append(''.join(ali1))
+output.append(''.join(ali2))
+
+# writing output to file
+with open('output.txt', 'w') as f:
+    f.write('\n'.join(output))
+
+
