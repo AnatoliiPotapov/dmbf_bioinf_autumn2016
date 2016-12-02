@@ -1,0 +1,30 @@
+# coding: utf-8
+
+with open('input.txt') as f:
+    lines = f.readlines()
+
+indexes = []
+output = []
+
+# function for computing gc content of given DNA string
+def GC(s):
+    GC_content = 100.0 * (s.count("G") + s.count("C")) / len(s) 
+    return GC_content
+
+# first selecting indexes of dna definitions
+for index, line in  enumerate(lines):
+    if '>' in line:
+        indexes.append(index)
+
+indexes.append(len(lines))
+
+# then producing an output
+for n, index in enumerate(indexes[:-1]):
+    output.append(lines[index][1:].replace('\n', ''))
+    output.append(str(GC("".join(lines[index+1:indexes[n+1]]).replace('\n', ''))))
+print output
+
+# writing output to file
+with open('output.txt', 'w') as f:
+    f.write('\n'.join(output))
+

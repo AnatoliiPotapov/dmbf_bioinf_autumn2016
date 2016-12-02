@@ -1,0 +1,117 @@
+# coding: utf-8
+# Potapov 4115
+
+import numpy as np
+
+with open('input.txt') as f:
+    lines = f.readlines()
+
+lines = [line.replace("\t", " ").replace("\n", "") for line in lines]
+# print lines
+
+# parsing data
+
+obs = lines[0]
+hid_state = lines[4]
+
+obs_alph = lines[2].split(" ")
+hid_alph = lines[6].split(" ")
+
+alph_obs = {}
+for ind,el in enumerate(obs_alph):
+    if el!="":
+        alph_obs[el] = ind
+
+
+alph_hid = {}
+for ind,el in enumerate(hid_alph):
+    if el!="":
+        alph_hid[el] = ind 
+
+# useful function for printing tabular data
+def table(data, left_header, up_header):
+    lines = []
+    d = "\t"
+    lines.append(" " + d + (d).join(up_header) + '\n')
+    
+    for i in range(data.shape[0]):
+        lines.append(left_header[i] + d + (d).join([format(num, '.4f') for num in data[i,:]]) + '\n')
+    
+    return(lines)
+
+# инициализируем скрытую марковскую модель
+
+class HMM(object):
+    
+    alph_hidden = {}
+    alph_viz = {}
+    
+    tr_m = []
+    em_m = []
+    
+    def __init__(self, alph_hidden, alph_viz):
+        
+        self.alph_hidden = alph_hidden
+        self.alph_viz = alph_viz
+        
+        self.tr_m = np.zeros((len(alph_hidden), len(alph_hidden)))
+        self.em_m = np.zeros((len(alph_hidden), len(alph_viz)))
+    
+    def incr_str(self, obs, hid_state):
+        l = len(obs)
+        
+        for index in range(l):
+            self.em_m[self.alph_hidden[hid_state[index]],
+                      self.alph_viz[obs[index]]] += 1
+            
+        for index in range(l-1):
+            self.tr_m[self.alph_hidden[hid_state[index]],
+                      self.alph_hidden[hid_state[index+1]]] += 1    
+        
+        for i in range(len(self.alph_hidden)):
+            self.em_m[i,:] /= sum(self.em_m[i, :])
+            self.tr_m[i,:] /= sum(self.tr_m[i, :])
+            
+    def table_formation(self):
+        
+        hid_lookup = dict(zip(self.alph_hidden.values(), self.alph_hidden.keys()))
+        viz_lookup = dict(zip(self.alph_viz.values(), self.alph_viz.keys()))
+        
+        lines = []
+        
+        tr_header = []
+        for i in hid_lookup:
+            tr_header.append(hid_lookup[i]) 
+        
+        em_header = []
+        for i in viz_lookup:
+            em_header.append(viz_lookup[i]) 
+
+        transition_t = table(self.tr_m, tr_header, tr_header)
+        for line in transition_t:
+            lines.append(line)
+        
+        lines.append('--------\n')
+        
+        emission_t = table(self.em_m, tr_header, em_header)
+        for line in emission_t:
+            lines.append(line)
+        
+        
+        return lines   
+            
+
+Hmm = HMM(alph_hid, alph_obs)
+Hmm.incr_str(obs, hid_state)
+
+lines = Hmm.table_formation()
+# for line in lines:
+# print line
+
+# print Hmm.tr_m
+# print Hmm.em_m
+
+# writing output to file
+with open('output.txt', 'w') as f:
+    f.write(('').join(lines))
+
